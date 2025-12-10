@@ -5,7 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # Permet de déclencher manuellement
+  workflow_dispatch:
 
 jobs:
   test:
@@ -17,10 +17,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     
@@ -31,9 +31,7 @@ jobs:
     
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Format check with black
@@ -51,15 +49,15 @@ jobs:
           --self-contained-html
     
     - name: Run all tests (including slow ones)
-      if: matrix.python-version == '3.11'  # Exécuter seulement pour une version
+      if: matrix.python-version == '3.11'
       run: |
         pytest tests/ \
           --cov=src \
           --cov-report=term-missing
     
     - name: Upload test results
-      uses: actions/upload-artifact@v3
-      if: always()  # Toujours upload, même si les tests échouent
+      uses: actions/upload-artifact@v4  # ← CORRIGÉ ICI
+      if: always()
       with:
         name: test-results-py${{ matrix.python-version }}
         path: |
@@ -81,10 +79,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4  # ← AUSSI METTRE À JOUR
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5  # ← AUSSI METTRE À JOUR
       with:
         python-version: "3.11"
     
@@ -93,7 +91,7 @@ jobs:
         python setup.py sdist bdist_wheel
     
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # ← CORRIGÉ ICI
       with:
         name: dist
         path: dist/
