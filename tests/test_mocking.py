@@ -1,50 +1,57 @@
 import pytest
+from unittest.mock import Mock, patch, MagicMock
 from src.calculator import Calculator, DatabaseService
 
 
-class TestFixtures:
-    """Démonstration des fixtures pytest."""
+class TestMocking:
+    """Tests avec mocking."""
     
-    @pytest.fixture
-    def calculator(self):
-        """Fixture de base qui retourne une nouvelle instance."""
-        return Calculator()
+    def test_mock_basique(self):
+        # Création d'un mock simple
+        mock_obj = Mock()
+        mock_obj.method.return_value = 42
+        
+        assert mock_obj.method() == 42
+        mock_obj.method.assert_called_once()
     
-    @pytest.fixture
-    def calculator_with_cleanup(self):
-        """Fixture avec cleanup."""
-        calc = Calculator()
-        yield calc
-        # Cleanup après le test
-        print("\nCleanup after test")
+    def test_mock_with_side_effect(self):
+        mock_obj = Mock()
+        mock_obj.calculate.side_effect = [1, 2, 3]
+        
+        assert mock_obj.calculate() == 1
+        assert mock_obj.calculate() == 2
+        assert mock_obj.calculate() == 3
     
-    @pytest.fixture(scope="class")
-    def shared_calculator(self):
-        """Fixture partagée pour toute la classe."""
-        return Calculator()
+    def test_patch_function(self):
+        with patch('src.calculator.Calculator.add') as mock_add:
+            mock_add.return_value = 100
+            calc = Calculator()
+            
+            result = calc.add(2, 3)
+            
+            assert result == 100
+            mock_add.assert_called_once_with(2, 3)
     
-    @pytest.fixture
-    def db_service(self):
-        """Fixture pour le service de base de données."""
+    def test_patch_class(self):
+        with patch('src.calculator.DatabaseService') as MockDB:
+            service = MockDB()  # ← CORRECTION !
+            service.get_data.return_value = [{"id": 999}]
+            data = service.get_data("query")
+            assert data[0]["id"] == 999
+    
+    @patch('src.calculator.DatabaseService.connect')
+    def test_decorator_patch(self, mock_connect):
+        mock_connect.return_value = False
+        
         service = DatabaseService()
-        service.connect()
-        return service
+        result = service.connect()
+        
+        assert result is False
+        mock_connect.assert_called_once()
     
-    # Tests utilisant les fixtures
-    def test_with_basic_fixture(self, calculator):
-        assert calculator.add(1, 1) == 2
-    
-    def test_with_cleanup_fixture(self, calculator_with_cleanup):
-        assert calculator_with_cleanup.multiply(3, 4) == 12
-    
-    def test_shared_fixture_1(self, shared_calculator):
-        shared_calculator.result = 10
-    
-    def test_shared_fixture_2(self, shared_calculator):
-        # Accède à l'attribut défini dans le test précédent
-        assert hasattr(shared_calculator, 'result')
-    
-    def test_database_service(self, db_service):
-        data = db_service.get_data("SELECT * FROM test")
-        assert len(data) == 1
-        assert data[0]["id"] == 1
+    def test_mock_exception(self):
+        mock_obj = Mock()
+        mock_obj.process.side_effect = ValueError("Error occurred")
+        
+        with pytest.raises(ValueError, match="Error occurred"):
+            mock_obj.process()
